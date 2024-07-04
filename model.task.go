@@ -12,51 +12,72 @@ type Task struct {
 	Due  time.Time `json:"due"`
 }
 
-type TaskStore struct {
-	store map[int]Task
-}
+type TaskStore map[int]Task
 
 func New() *TaskStore {
 	taskstore := &TaskStore{}
 	return taskstore
 }
 
-func (ts *TaskStore) CreateTask(text string, tags []string, due time.Time) int {
-	newTask := Task{Id: len(ts.store), Text: text, Tags: tags, Due: due}
-	ts.store[newTask.Id] = newTask
+func (ts TaskStore) CreateTask(text string, tags []string, due time.Time) int {
+	newTask := Task{Id: len(ts), Text: text, Tags: tags, Due: due}
+	ts[newTask.Id] = newTask
 	return newTask.Id
 }
 
-func (ts *TaskStore) GetTask(id int) (Task, error) {
-	task, found := ts.store[id]
+func (ts TaskStore) GetTask(id int) (Task, error) {
+	task, found := ts[id]
 	if found {
 		return task, nil
 	}
 	return Task{}, errors.New("task not found")
 }
 
-func (ts *TaskStore) DeleteTask(id int) error {
+func (ts TaskStore) DeleteTask(id int) error {
 	if _, err := ts.GetTask(id); err != nil {
 		return nil
 	}
-	delete(ts.store, id)
+	delete(ts, id)
 	return nil
 }
 
-func (ts *TaskStore) DeleteAllTasks() error {
-	if len(ts.store) == 0 {
+func (ts TaskStore) DeleteAllTasks() error {
+	if len(ts) == 0 {
 		return nil
 	}
-	for _, task := range ts.store {
-		delete(ts.store, task.Id)
+	for _, task := range ts {
+		delete(ts, task.Id)
 	}
 	return nil
 }
 
-func (ts *TaskStore) getAllTasks() []Task {
+func (ts TaskStore) getAllTasks() []Task {
 	var tasks []Task
-	for index, _ := range ts.store {
-		tasks[index] = ts.store[index]
+	for index, _ := range ts {
+		tasks[index] = ts[index]
+	}
+	return tasks
+}
+
+func (ts TaskStore) GetTaskByTag(tag string) []Task {
+	var tasks []Task
+	for _, task := range ts {
+		for _, t := range task.Tags {
+			if t == tag {
+				tasks = append(tasks, task)
+				break
+			}
+		}
+	}
+	return tasks
+}
+
+func (ts TaskStore) GetTaskByDueDate(year int, month time.Month, day int) []Task {
+	var tasks []Task
+	for _, task := range ts {
+		if task.Due.Year() == year && task.Due.Month() == month && task.Due.Day() == day {
+			tasks = append(tasks, task)
+		}
 	}
 	return tasks
 }
